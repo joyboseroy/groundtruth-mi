@@ -9,6 +9,7 @@ recall) holds generally or was specific to one favorable query.
 
 import os
 import sys
+import csv
 
 SDM_REPO_SRC = os.environ.get(
     "SDM_REPO_SRC",
@@ -119,6 +120,29 @@ def main():
     print(f"Discovered-edge count across queries: min={min(r['n_discovered'] for r in rows)}, "
           f"max={max(r['n_discovered'] for r in rows)}, "
           f"mean={sum(r['n_discovered'] for r in rows)/n_total:.1f}")
+
+    results_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results", "sdm")
+    os.makedirs(results_dir, exist_ok=True)
+    csv_path = os.path.join(results_dir, "multi_query_results.csv")
+    fieldnames = ["query_id", "n_candidates", "n_necessary", "n_discovered",
+                  "node_precision", "node_recall", "edge_precision", "edge_recall"]
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            def fmt(x):
+                return "" if x is None else f"{x:.3f}"
+            writer.writerow({
+                "query_id": r["id"],
+                "n_candidates": r["n_cand"],
+                "n_necessary": r["n_necessary"],
+                "n_discovered": r["n_discovered"],
+                "node_precision": fmt(r["node_p"]),
+                "node_recall": fmt(r["node_r"]),
+                "edge_precision": fmt(r["edge_p"]),
+                "edge_recall": fmt(r["edge_r"]),
+            })
+    print(f"\nResults written to {csv_path}")
 
 
 if __name__ == "__main__":
