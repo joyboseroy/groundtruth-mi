@@ -14,6 +14,7 @@ rule as verification.py.
 
 import sys
 import os
+import csv
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "protocol"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "discovery"))
 
@@ -117,6 +118,32 @@ def main():
               "reports a nonempty circuit. This supports treating the divergence as a "
               "general property of this instance's redundant computation, not an artifact "
               "of one specific query.")
+
+    results_dir = os.path.join(os.path.dirname(__file__), "..", "..", "results", "hopfield")
+    os.makedirs(results_dir, exist_ok=True)
+    csv_path = os.path.join(results_dir, "multi_query_results.csv")
+    fieldnames = ["query_id", "pattern", "corruption_level", "excluded_spurious",
+                  "n_flips_in_recall", "n_candidates", "n_necessary", "n_discovered"]
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            if r.get("excluded"):
+                writer.writerow({
+                    "query_id": r["query_id"], "pattern": r["pattern"],
+                    "corruption_level": r["level"], "excluded_spurious": True,
+                    "n_flips_in_recall": "", "n_candidates": "", "n_necessary": "", "n_discovered": "",
+                })
+            else:
+                writer.writerow({
+                    "query_id": r["query_id"], "pattern": r["pattern"],
+                    "corruption_level": r["level"], "excluded_spurious": False,
+                    "n_flips_in_recall": r["n_flips_in_recall"],
+                    "n_candidates": r["n_candidates"],
+                    "n_necessary": r["n_necessary"],
+                    "n_discovered": r["n_discovered"],
+                })
+    print(f"\nResults written to {csv_path}")
 
 
 if __name__ == "__main__":
